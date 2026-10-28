@@ -1,0 +1,31 @@
+{
+  "name": "mcp-api-boundary",
+  "version": "0.1.0",
+  "private": true,
+  "description": "An MCP server that can only do what a public API allows. The boundary lives in the API, and the default answer is no.",
+  "license": "MIT",
+  "author": "Pavol Rašev (https://www.pavolrasev.com)",
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "api": "pnpm --filter @demo/api start",
+    "mcp": "pnpm --filter @demo/mcp start",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "check": "pnpm typecheck && pnpm lint && pnpm test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^22.19.0",
+    "eslint": "^10.13.0",
+    "tsx": "^4.21.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.72.1",
+    "vitest": "^4.1.10"
+  }
+}
