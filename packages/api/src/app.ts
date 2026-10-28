@@ -1,4 +1,4 @@
-import { Hono, type Context } from 'hono';
+import { Hono } from 'hono';
 import { DateTime } from 'luxon';
 import { authenticate, type Principal } from './auth.js';
 import { freeSlots } from './availability.js';
@@ -15,13 +15,16 @@ export interface AppOptions {
 }
 
 /* Every error is a sentence a person (or a model) can act on. */
-function fail(c: Context, status: Status, message: string) {
-  if (status === 401) c.header('WWW-Authenticate', 'Bearer realm="clinic-api"');
-  return c.json({ error: status, message }, status);
+function fail(status: Status, message: string): Response {
+  const headers: Record<string, string> = status === 401 ? { 'WWW-Authenticate': 'Bearer realm="clinic-api"' } : {};
+  return Response.json({ error: status, message }, { status, headers });
 }
 
 function fold(text: string): string {
-  return text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+  return text
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase();
 }
 
 export function createApp({ store, now = () => new Date() }: AppOptions) {
@@ -39,21 +42,21 @@ export function createApp({ store, now = () => new Date() }: AppOptions) {
   app.use('/v1/*', async (c, next) => {
     const header = c.req.header('authorization') ?? '';
     const match = /^Bearer\s+(\S+)$/i.exec(header);
-    if (!match?.[1]) return fail(c, 401, 'Send an API key as a bearer token.');
+    if (!match?.[1]) return fail(401, 'Send an API key as a bearer token.');
 
     const principal = authenticate(store, match[1]);
-    if (!principal) return fail(c, 401, 'This API key is not valid, or its owner is no longer active.');
+    if (!principal) return fail(401, 'This API key is not valid, or its owner is no longer active.');
 
     const path = new URL(c.req.url).pathname;
     if (principal.kind === 'api_key' && hasForbiddenSegment(path)) {
-      return fail(c, 403, 'Clinical data is never available to API keys or assistants.');
+      return fail(403, 'Clinical data is never available to API keys or assistants.');
     }
 
     const scope = scopeForRequest(c.req.method, path);
-    if (!scope) return fail(c, 403, 'This endpoint is not open to API calls.');
+    if (!scope) return fail(403, 'This endpoint is not open to API calls.');
 
     if (!principal.scopes.has(scope)) {
-      return fail(c, 403, `This key does not have the ${scope} scope.`);
+      return fail(403, `This key does not have the ${scope} scope.`);
     }
 
     c.set('principal', principal);
@@ -79,9 +82,7 @@ export function createApp({ store, now = () => new Date() }: AppOptions) {
 
   app.get('/v1/clinics', (c) => c.json(store.clinics));
   app.get('/v1/services', (c) => c.json(store.services));
-  app.get('/v1/team', (c) =>
-    c.json(store.members.map(({ id, name, role, status }) => ({ id, name, role, status }))),
-  );
+  app.get('/v1/team', (c) => c.json(store.members.map(({ id, name, role, status }) => ({ id, name, role, status }))));
 
   app.get('/v1/clients', (c) => {
     const query = fold(c.req.query('search') ?? '').trim();
@@ -101,14 +102,12 @@ export function createApp({ store, now = () => new Date() }: AppOptions) {
 
   app.get('/v1/clients/:id', (c) => {
     const client = store.clients.find((item) => item.id === c.req.param('id'));
-    return client ? c.json(client) : fail(c, 404, `There is no client with ID ${c.req.param('id')}.`);
+    return client ? c.json(client) : fail(404, `There is no client with ID ${c.req.param('id')}.`);
   });
 
   /* Only a signed-in therapist or owner ever gets here; keys are stopped above. */
   app.get('/v1/clients/:id/:kind{records|notes|photos|attachments|consents|surveys}', (c) =>
-    c.json(
-      store.clinical.filter((item) => item.clientId === c.req.param('id') && item.kind === c.req.param('kind')),
-    ),
+    c.json(store.clinical.filter((item) => item.clientId === c.req.param('id') && item.kind === c.req.param('kind'))),
   );
 
   app.get('/v1/availability', (c) => {
@@ -116,10 +115,10 @@ export function createApp({ store, now = () => new Date() }: AppOptions) {
     const service = store.services.find((item) => item.id === c.req.query('serviceId'));
     const from = c.req.query('from') ?? '';
     const days = Number(c.req.query('days') ?? '1');
-    if (!clinic) return fail(c, 404, 'There is no such clinic.');
-    if (!service) return fail(c, 400, 'Say which service: serviceId is missing or unknown.');
-    if (!DateTime.fromISO(from).isValid) return fail(c, 400, 'from must be a date like 2026-11-03.');
-    if (!Number.isInteger(days) || days < 1 || days > 30) return fail(c, 400, 'days must be between 1 and 30.');
+    if (!clinic) return fail(404, 'There is no such clinic.');
+    if (!service) return fail(400, 'Say which service: serviceId is missing or unknown.');
+    if (!DateTime.fromISO(from).isValid) return fail(400, 'from must be a date like 2026-11-03.');
+    if (!Number.isInteger(days) || days < 1 || days > 30) return fail(400, 'days must be between 1 and 30.');
 
     return c.json(freeSlots(store, { clinic, service, fromDate: from, days, now: now() }));
   });
@@ -128,7 +127,7 @@ export function createApp({ store, now = () => new Date() }: AppOptions) {
     const from = Date.parse(c.req.query('from') ?? '');
     const to = Date.parse(c.req.query('to') ?? '');
     if (Number.isNaN(from) || Number.isNaN(to)) {
-      return fail(c, 400, 'from and to must be ISO timestamps.');
+      return fail(400, 'from and to must be ISO timestamps.');
     }
     const rows = store.appointments
       .filter((item) => Date.parse(item.startsAt) >= from && Date.parse(item.startsAt) < to)
@@ -143,10 +142,10 @@ export function createApp({ store, now = () => new Date() }: AppOptions) {
     const service = store.services.find((item) => item.id === body['serviceId']);
     const startsAt = typeof body['startsAt'] === 'string' ? DateTime.fromISO(body['startsAt']) : null;
 
-    if (!clinic) return fail(c, 404, 'There is no such clinic.');
-    if (!client) return fail(c, 404, 'There is no client with that ID. Look the client up first.');
-    if (!service) return fail(c, 404, 'There is no service with that ID.');
-    if (!startsAt?.isValid) return fail(c, 400, 'startsAt must be an ISO timestamp.');
+    if (!clinic) return fail(404, 'There is no such clinic.');
+    if (!client) return fail(404, 'There is no client with that ID. Look the client up first.');
+    if (!service) return fail(404, 'There is no service with that ID.');
+    if (!startsAt?.isValid) return fail(400, 'startsAt must be an ISO timestamp.');
 
     /* The therapist and room come from the availability engine, never from the caller's guess. */
     const localDate = startsAt.setZone(clinic.timezone).toISODate() ?? '';
@@ -156,7 +155,7 @@ export function createApp({ store, now = () => new Date() }: AppOptions) {
         (body['therapistId'] === undefined || candidate.therapistId === body['therapistId']),
     );
     if (!slot) {
-      return fail(c, 409, 'That time is not free for this service. Ask for free slots and pick one of them.');
+      return fail(409, 'That time is not free for this service. Ask for free slots and pick one of them.');
     }
 
     try {
@@ -173,17 +172,17 @@ export function createApp({ store, now = () => new Date() }: AppOptions) {
       });
       return c.json(appointmentView(appointment), 201);
     } catch (error) {
-      if (error instanceof ConflictError) return fail(c, 409, error.message);
+      if (error instanceof ConflictError) return fail(409, error.message);
       throw error;
     }
   });
 
   app.post('/v1/appointments/:id/cancel', (c) => {
     const appointment = store.appointments.find((item) => item.id === c.req.param('id'));
-    if (!appointment) return fail(c, 404, `There is no appointment with ID ${c.req.param('id')}.`);
-    if (appointment.status === 'cancelled') return fail(c, 409, 'That appointment is already cancelled.');
+    if (!appointment) return fail(404, `There is no appointment with ID ${c.req.param('id')}.`);
+    if (appointment.status === 'cancelled') return fail(409, 'That appointment is already cancelled.');
     if (Date.parse(appointment.startsAt) < now().getTime()) {
-      return fail(c, 409, 'That appointment has already started or is in the past, so it cannot be cancelled.');
+      return fail(409, 'That appointment has already started or is in the past, so it cannot be cancelled.');
     }
     appointment.status = 'cancelled';
     return c.json(appointmentView(appointment));
@@ -207,7 +206,7 @@ export function createApp({ store, now = () => new Date() }: AppOptions) {
     return c.json(rows);
   });
 
-  app.notFound((c) => fail(c, 404, 'There is nothing at this address.'));
+  app.notFound(() => fail(404, 'There is nothing at this address.'));
 
   return app;
 }

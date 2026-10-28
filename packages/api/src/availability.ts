@@ -9,7 +9,7 @@ export interface Slot {
   roomId: string;
 }
 
-const STEP_MINUTES = 15;
+const STEP_MINUTES = 30;
 
 function overlaps(appointment: Appointment, start: number, end: number): boolean {
   return (
@@ -45,10 +45,14 @@ export function freeSlots(
       const hours = therapist.hours[day.weekday];
       if (!hours) continue;
 
-      const open = DateTime.fromISO(`${day.toISODate() ?? ''}T${hours[0]}`, { zone: clinic.timezone });
-      const close = DateTime.fromISO(`${day.toISODate() ?? ''}T${hours[1]}`, { zone: clinic.timezone });
+      const open = DateTime.fromISO(`${day.toISODate()}T${hours[0]}`, { zone: clinic.timezone });
+      const close = DateTime.fromISO(`${day.toISODate()}T${hours[1]}`, { zone: clinic.timezone });
 
-      for (let start = open; start.plus({ minutes: service.durationMinutes }) <= close; start = start.plus({ minutes: STEP_MINUTES })) {
+      for (
+        let start = open;
+        start.plus({ minutes: service.durationMinutes }) <= close;
+        start = start.plus({ minutes: STEP_MINUTES })
+      ) {
         const end = start.plus({ minutes: service.durationMinutes });
         const [startMs, endMs] = [start.toMillis(), end.toMillis()];
         if (startMs < now.getTime()) continue;

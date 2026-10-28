@@ -9,8 +9,7 @@ const NOW = new Date('2026-11-03T07:00:00Z');
 function setup() {
   const store = createDemoStore(NOW);
   const app = createApp({ store, now: () => NOW });
-  const get = (path: string, secret: string) =>
-    app.request(path, { headers: { authorization: `Bearer ${secret}` } });
+  const get = (path: string, secret: string) => app.request(path, { headers: { authorization: `Bearer ${secret}` } });
   return { store, app, get };
 }
 
@@ -61,7 +60,7 @@ describe('API keys', () => {
   });
 
   it('answers 401 without a key and 403 for an unmapped route', async () => {
-    const { store, app, get } = setup();
+    const { store, app } = setup();
     expect((await app.request('/v1/clients')).status).toBe(401);
     const { secret } = issueApiKey(store, 'mem_owner', [...KEY_SCOPES]);
     const response = await app.request('/v1/clients/cl_001', {

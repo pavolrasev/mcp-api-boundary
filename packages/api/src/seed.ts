@@ -65,11 +65,46 @@ export function createDemoStore(now: Date = new Date()): Store {
   );
 
   store.clients.push(
-    { id: 'cl_001', firstName: 'Anna', lastName: 'Čierna', phone: '+421 900 111 201', email: 'anna.c@example.com', birthDate: '1988-04-12' },
-    { id: 'cl_002', firstName: 'Anna', lastName: 'Pole', phone: '+421 900 111 202', email: null, birthDate: '1975-09-30' },
-    { id: 'cl_003', firstName: 'Tomas', lastName: 'Varga', phone: '+421 900 111 203', email: 'tvarga@example.com', birthDate: null },
-    { id: 'cl_004', firstName: 'Zuzana', lastName: 'Molnár', phone: null, email: 'zuzana@example.com', birthDate: '1992-01-05' },
-    { id: 'cl_005', firstName: 'Michal', lastName: 'Brook', phone: '+421 900 111 205', email: null, birthDate: '2001-07-19' },
+    {
+      id: 'cl_001',
+      firstName: 'Anna',
+      lastName: 'Čierna',
+      phone: '+421 900 111 201',
+      email: 'anna.c@example.com',
+      birthDate: '1988-04-12',
+    },
+    {
+      id: 'cl_002',
+      firstName: 'Anna',
+      lastName: 'Pole',
+      phone: '+421 900 111 202',
+      email: null,
+      birthDate: '1975-09-30',
+    },
+    {
+      id: 'cl_003',
+      firstName: 'Tomas',
+      lastName: 'Varga',
+      phone: '+421 900 111 203',
+      email: 'tvarga@example.com',
+      birthDate: null,
+    },
+    {
+      id: 'cl_004',
+      firstName: 'Zuzana',
+      lastName: 'Molnár',
+      phone: null,
+      email: 'zuzana@example.com',
+      birthDate: '1992-01-05',
+    },
+    {
+      id: 'cl_005',
+      firstName: 'Michal',
+      lastName: 'Brook',
+      phone: '+421 900 111 205',
+      email: null,
+      birthDate: '2001-07-19',
+    },
   );
 
   const today = DateTime.fromJSDate(now, { zone: TIMEZONE }).startOf('day');
@@ -83,10 +118,42 @@ export function createDemoStore(now: Date = new Date()): Store {
   };
 
   const seed = [
-    { client: 'cl_001', service: 'svc_therapy', therapist: 'mem_owner', room: 'room_1', day: 0, time: '09:00', minutes: 45 },
-    { client: 'cl_003', service: 'svc_massage', therapist: 'mem_therapist', room: 'room_2', day: 0, time: '10:00', minutes: 30 },
-    { client: 'cl_002', service: 'svc_assessment', therapist: 'mem_owner', room: 'room_1', day: 1, time: '08:00', minutes: 60 },
-    { client: 'cl_005', service: 'svc_therapy', therapist: 'mem_therapist', room: 'room_2', day: 1, time: '13:00', minutes: 45 },
+    {
+      client: 'cl_001',
+      service: 'svc_therapy',
+      therapist: 'mem_owner',
+      room: 'room_1',
+      day: 0,
+      time: '09:00',
+      minutes: 45,
+    },
+    {
+      client: 'cl_003',
+      service: 'svc_massage',
+      therapist: 'mem_therapist',
+      room: 'room_2',
+      day: 0,
+      time: '10:00',
+      minutes: 30,
+    },
+    {
+      client: 'cl_002',
+      service: 'svc_assessment',
+      therapist: 'mem_owner',
+      room: 'room_1',
+      day: 1,
+      time: '08:00',
+      minutes: 60,
+    },
+    {
+      client: 'cl_005',
+      service: 'svc_therapy',
+      therapist: 'mem_therapist',
+      room: 'room_2',
+      day: 1,
+      time: '13:00',
+      minutes: 45,
+    },
   ];
   seed.forEach((row, index) => {
     insertAppointment(store, {
@@ -103,9 +170,33 @@ export function createDemoStore(now: Date = new Date()): Store {
 
   const date = (offset: number) => today.plus({ days: offset }).toISODate() ?? '';
   store.invoices.push(
-    { id: 'inv_1', number: '2026-0101', clientId: 'cl_001', issuedOn: date(-30), dueOn: date(-16), totalCents: 4000, paidCents: 0 },
-    { id: 'inv_2', number: '2026-0102', clientId: 'cl_003', issuedOn: date(-5), dueOn: date(9), totalCents: 5500, paidCents: 2000 },
-    { id: 'inv_3', number: '2026-0103', clientId: 'cl_004', issuedOn: date(-10), dueOn: date(4), totalCents: 3000, paidCents: 3000 },
+    {
+      id: 'inv_1',
+      number: '2026-0101',
+      clientId: 'cl_001',
+      issuedOn: date(-30),
+      dueOn: date(-16),
+      totalCents: 4000,
+      paidCents: 0,
+    },
+    {
+      id: 'inv_2',
+      number: '2026-0102',
+      clientId: 'cl_003',
+      issuedOn: date(-5),
+      dueOn: date(9),
+      totalCents: 5500,
+      paidCents: 2000,
+    },
+    {
+      id: 'inv_3',
+      number: '2026-0103',
+      clientId: 'cl_004',
+      issuedOn: date(-10),
+      dueOn: date(4),
+      totalCents: 3000,
+      paidCents: 3000,
+    },
   );
 
   store.clinical.push(
